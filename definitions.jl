@@ -46,7 +46,7 @@ end
     if p.periodic
         return periodic_neighbours(st, pos, r)
     else
-        return ( (i, zero(svec(p))) for i in neighbours(st, pos, r) )
+        return ( (i, zero(SVec2)) for i in neighbours(st, pos, r) )
     end
 end
 
@@ -144,9 +144,11 @@ function simulate(s_init, p)
         # compute forces
         for i in 1:N
             for (j, offset) in neighbours_bc(p, bht, s.X[i], p.cutoff)
+            #for j in 1:N 
                 if i != j
                     
                     R = s.X[i] - (s.X[j] - offset)
+                    #R = wrap(p, s.X[i] - s.X[j])
 
                     if norm(R) < p.cutoff
                         alpha = s.theta[i]
@@ -155,7 +157,7 @@ function simulate(s_init, p)
                         z = @SVector[R[1], R[2], alpha, beta]
                         dz = ForwardDiff.gradient( (z) -> potential(z,p), z)
                         
-                        dX[i]     += -1/N * dz[1:2]
+                        dX[i]     += -1/N * SVec2(dz[1], dz[2])
                         dTheta[i] += -1/N * dz[3]
                     end
                 end

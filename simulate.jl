@@ -5,23 +5,21 @@ include("definitions.jl")
 # parameters
 #############################
 p = let 
-    l = 1.0
+    l = 1.5
     d = 0.2 
-    chi = (l^2 - d^2) / (l^2 + d^2)
-    cutoff = l * 5
+    cutoff = l * 2
     
     (
-        N = 200,  # total number of particles 
+        N = 5000,  # total number of particles 
         l = l,  # length of major axis of ellipse 
         d = d,  # length of minor axis of ellipse
-        chi = chi,
         t_step = 0.1,
         t_save = 0.0,
         t_start = 0.0,
         t_end = 500.0,
-        Lx = 10.0,
-        Ly = 10.0,
-        mu = 10.0,
+        Lx = 50.0,
+        Ly = 50.0,
+        mu = 100.0,
         lambda = 1.0,
         D_x  = 0 * 0.01,
         D_u =  0 * 0.001,
