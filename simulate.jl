@@ -10,13 +10,13 @@ p = let
     cutoff = l * 2
     
     (
-        N = 5000,  # total number of particles 
+        N = 2000,  # total number of particles 
         l = l,  # length of major axis of ellipse 
         d = d,  # length of minor axis of ellipse
-        t_step = 0.1,
+        t_step = 1.0,
         t_save = 0.0,
         t_start = 0.0,
-        t_end = 500.0,
+        t_end = 5000.0,
         Lx = 50.0,
         Ly = 50.0,
         mu = 100.0,
