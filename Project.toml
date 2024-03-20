@@ -1,0 +1,11 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+SpatialHashTables = "894afd4e-5c6f-4d1a-a294-873acbd0e95c"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
