@@ -4,6 +4,7 @@ using LinearAlgebra, Random, StaticArrays
 using GLMakie, ForwardDiff, ProgressMeter
 using GLMakie.GeometryBasics
 using SpatialHashTables
+using TOML
 
 #= A few notes 
 - using `global` is not good for performance. try to pass all parameters (can account for 10 to 100 times faster!)
@@ -33,6 +34,45 @@ using SpatialHashTables
 
 const SVec2 = SVector{2, Float64}
 
+
+
+
+#############################
+# code to define parameters
+# #############################
+# p = let 
+#     l = 1.5
+#     d = 0.2 
+#     cutoff = l * 2
+    
+#     (
+#         N = 2000,  # total number of particles 
+#         l = l,  # length of major axis of ellipse 
+#         d = d,  # length of minor axis of ellipse
+#         t_step = 1.0,
+#         t_save = 0.0,
+#         t_start = 0.0,
+#         t_end = 5000.0,
+#         Lx = 50.0,
+#         Ly = 50.0,
+#         mu = 100.0,
+#         lambda = 1.0,
+#         D_x  = 0 * 0.01,
+#         D_u =  0 * 0.001,
+#         periodic = true,
+#         cutoff = cutoff
+#     )
+# end 
+
+
+function loadparameters(fn)
+    d = TOML.parsefile(fn)
+    return NamedTuple{Tuple(Symbol.(keys(d)))}(Tuple(values(d)))
+end
+
+
+
+# plotting function
 function ellipse(X, theta, p)
     (;l, d) = p
     s, c = sincos(theta) 

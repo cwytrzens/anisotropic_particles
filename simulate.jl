@@ -1,33 +1,8 @@
 include("definitions.jl")
 
 
-#############################
-# parameters
-#############################
-p = let 
-    l = 1.5
-    d = 0.2 
-    cutoff = l * 2
-    
-    (
-        N = 2000,  # total number of particles 
-        l = l,  # length of major axis of ellipse 
-        d = d,  # length of minor axis of ellipse
-        t_step = 1.0,
-        t_save = 0.0,
-        t_start = 0.0,
-        t_end = 5000.0,
-        Lx = 50.0,
-        Ly = 50.0,
-        mu = 100.0,
-        lambda = 1.0,
-        D_x  = 0 * 0.01,
-        D_u =  0 * 0.001,
-        periodic = true,
-        cutoff = cutoff
-    )
-end 
 
+p = loadparameters("params.toml")
 s = init(p)
 ts, sol = simulate(s, p)
 
