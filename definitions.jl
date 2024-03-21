@@ -103,12 +103,12 @@ end
 #############################
 #initial random values for X and theta
 #############################
-function init(p)
+function init(p, rng = Random.default_rng())
     (;N, Lx, Ly) = p
 
     # create initial positions and angles
-    X = [SVec2(rand() * Lx, rand() * Ly) for _ in 1:N] 
-    theta = [rand() * pi for _ in 1:N]
+    X = [SVec2(rand(rng) * Lx, rand(rng) * Ly) for _ in 1:N] 
+    theta = [rand(rng) * pi for _ in 1:N]
     
     s = (;X, theta)
 
@@ -152,7 +152,7 @@ end
 #############################
 # Solve ODE 
 ##########################
-function simulate(s_init, p) 
+function simulate(s_init, p, rng = Random.default_rng()) 
     (;N, mu, lambda) = p
 
 
@@ -173,6 +173,10 @@ function simulate(s_init, p)
     dt = p.t_step 
     t = p.t_start 
 
+
+    # define function of potential, capture parameters
+    pot(z) = potential(z, p)
+
     @showprogress for k in 1:n_steps
 
         # set forces to zero 
@@ -183,19 +187,18 @@ function simulate(s_init, p)
             
         # compute forces
         for i in 1:N
-            for (j, offset) in neighbours_bc(p, bht, s.X[i], p.cutoff)
-            #for j in 1:N 
+            # for (j, offset) in neighbours_bc(p, bht, s.X[i], p.cutoff)
+            for j in 1:N 
                 if i != j
                     
                     R = wrap(p, s.X[i] - s.X[j])
-                    #R = wrap(p, s.X[i] - s.X[j])
 
                     if norm(R) < p.cutoff
                         alpha = s.theta[i]
                         beta  = s.theta[j]
 
                         z = @SVector[R[1], R[2], alpha, beta]
-                        dz = ForwardDiff.gradient( (z) -> potential(z,p), z)
+                        dz = ForwardDiff.gradient(pot, z)
                         
                         dX[i]     += -1/N * SVec2(dz[1], dz[2])
                         dTheta[i] += -1/N * dz[3]
@@ -206,8 +209,8 @@ function simulate(s_init, p)
 
         # integrate forces
         for i in 1:N
-            s.X[i]     += dt * mu * dX[i]         + sqrt(dt) * sqrt(2 * p.D_x) * randn(SVec2)
-            s.theta[i] += dt * lambda * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn()
+            s.X[i]     += dt * mu * dX[i]         + sqrt(dt) * sqrt(2 * p.D_x) * randn(rng, SVec2)
+            s.theta[i] += dt * lambda * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn(rng)
         end
 
         if p.periodic
@@ -234,10 +237,10 @@ end
 ############################################
 # Create plot 
 ############################################
-init_plot(s, p, fig = Figure()) = init_plot(Observable(s), p, fig)
+init_plot(s, p, fig_pos = Figure()[1,1]) = init_plot(Observable(s), p, fig)
 
-function init_plot(s::Observable, p, fig = Figure())
-    ax = Axis(fig[1,1], aspect = DataAspect())
+function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
+    ax = Axis(fig_pos, aspect = DataAspect())
 
     X = @lift Point2f.($s.X) 
     U = @lift Point2f.(sincos.($s.theta))
@@ -248,5 +251,5 @@ function init_plot(s::Observable, p, fig = Figure())
     #scatter!(ax, X)
     #arrows!(ax, X, U, lengthscale = 0.2)
 
-    fig 
+    current_figure() 
 end
