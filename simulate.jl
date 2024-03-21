@@ -2,6 +2,10 @@ include("definitions.jl")
 
 
 p = loadparameters("params.toml")
+p = @set p.N = 500
+p = @set p.Lx = 20.0
+p = @set p.Ly = 20.0
+
 s = init(p)
 ts, sol = simulate(s, p)
 

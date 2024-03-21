@@ -93,7 +93,7 @@ end
 @inline function wrap(p, dx)
     if p.periodic
         dom = SVec2(p.Lx, p.Ly)
-        dx = @. dx - dom * round(dx ./ dom)
+        return @. dx - dom * round(dx ./ dom)
     else 
         return dx
     end
@@ -119,7 +119,7 @@ end
 function potential(x, p)
     (;l, d) = p 
 
-    R = wrap(p, @SVector[x[1], x[2]])
+    R = @SVector[x[1], x[2]]
     alpha = x[3]
     beta = x[4]
 
@@ -187,7 +187,7 @@ function simulate(s_init, p)
             #for j in 1:N 
                 if i != j
                     
-                    R = s.X[i] - (s.X[j] - offset)
+                    R = wrap(p, s.X[i] - s.X[j])
                     #R = wrap(p, s.X[i] - s.X[j])
 
                     if norm(R) < p.cutoff
