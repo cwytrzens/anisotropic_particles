@@ -1,7 +1,7 @@
 # to install, go into REPL, press ']' and then pkg> add GLMakie StaticArrays
 
 using LinearAlgebra, Random, StaticArrays
-using GLMakie, ForwardDiff, ProgressMeter
+using GLMakie, ForwardDiff, ProgressMeter, Accessors
 using GLMakie.GeometryBasics
 using SpatialHashTables
 using TOML
