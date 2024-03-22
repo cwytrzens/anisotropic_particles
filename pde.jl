@@ -94,21 +94,16 @@ end
 
 
 # create video
-begin
-    fig = Figure() 
-    title_str = Observable("t = ")
-    ax = Axis(fig[1,1], title = title_str)
-    sol_obs = Observable(sol[end])
+# begin
+#     fig = Figure() 
+#     title_str = Observable("t = ")
+#     ax = Axis(fig[1,1], title = title_str)
+#     sol_obs = Observable(sol[end])
 
-    heatmap!(sol_obs, colorrange = (minimum(sol), maximum(sol)))
+#     heatmap!(sol_obs, colorrange = (minimum(sol), maximum(sol)))
 
-    record(fig, "plots/video_alpha=$(round(1 - p.chi^2, digits=2)).mp4", LinRange(p.t_start, p.t_end, 360)) do t 
-        title_str[] = string("t = ", round(t, digits = 4))
-        sol_obs[] = sol(t)
-    end
-end
-
-
-# u = u0
-# du = similar(u0)
-# @time rhs!(du, u, p_ode, 0.1)
+#     record(fig, "plots/video_alpha=$(round(1 - p.chi^2, digits=2)).mp4", LinRange(p.t_start, p.t_end, 360)) do t 
+#         title_str[] = string("t = ", round(t, digits = 4))
+#         sol_obs[] = sol(t)
+#     end
+# end
