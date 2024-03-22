@@ -5,13 +5,13 @@ N = 2000
 t_step = 1.0
 t_save = 0.0
 t_start = 0.0
-t_end = 5.0
+t_end = 1.0
 Lx = 50.0
 Ly = 50.0
 mu = 100.0
 lambda = 1.0
 D_x  = 0.01
-D_u =  0.1
+D_u =  0.001
 periodic = true
 
 # PDE parameter 
