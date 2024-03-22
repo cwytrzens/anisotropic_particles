@@ -67,6 +67,11 @@ const SVec2 = SVector{2, Float64}
 
 function loadparameters(fn)
     d = TOML.parsefile(fn)
+
+    # postprocess parameters
+    d["chi"] = (d["l"]^2 - d["d"]^2) / (d["l"]^2 + d["d"]^2)
+    d["sigma"] = d["D_u"] / d["lambda"]
+
     return NamedTuple{Tuple(Symbol.(keys(d)))}(Tuple(values(d)))
 end
 
