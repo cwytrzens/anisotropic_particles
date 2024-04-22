@@ -1,0 +1,11 @@
+*.mod
+*.o
+*.exe
+*.dll
+
+
+# Build results #
+###################
+[Ii]nput/
+[Oo]utput/
+[Tt]emp/
