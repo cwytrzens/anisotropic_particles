@@ -5,6 +5,7 @@ using GLMakie, ForwardDiff, ProgressMeter, Accessors
 using GLMakie.GeometryBasics
 using SpatialHashTables
 using TOML
+using CellListMap
 
 #= A few notes 
 - using `global` is not good for performance. try to pass all parameters (can account for 10 to 100 times faster!)
@@ -114,6 +115,7 @@ function init(p, rng = Random.default_rng())
     # create initial positions and angles
     X = [SVec2(rand(rng) * Lx, rand(rng) * Ly) for _ in 1:N] 
     theta = [rand(rng) * pi for _ in 1:N]
+
     
     s = (;X, theta)
 
@@ -158,6 +160,8 @@ end
 # Solve ODE 
 ##########################
 function simulate(s_init, p, rng = Random.default_rng()) 
+
+    
     (;N, mu, lambda) = p
 
 
@@ -166,11 +170,23 @@ function simulate(s_init, p, rng = Random.default_rng())
 
     s = deepcopy(s_init)
 
+
     dX = similar(s.X)
     dTheta = similar(s.theta)
 
-    bht = BoundedHashTable(s.X, p.cutoff, (0.0, 0.0), (p.Lx, p.Ly))
+    dZ= [SVector{3,Float64}(0,0,0) for _ in 1:N] 
 
+    #bht = BoundedHashTable(s.X, p.cutoff, (0.0, 0.0), (p.Lx, p.Ly))
+
+
+    system = ParticleSystem(
+        positions = s.X, 
+        unitcell=[p.Lx,p.Ly], 
+        cutoff = p.cutoff, 
+        output = dZ,
+        output_name = :dZ
+    )
+ 
     n_steps = ceil(Int64, (p.t_end - p.t_start) / p.t_step)
     t_last_save = 0.0
 
@@ -182,35 +198,45 @@ function simulate(s_init, p, rng = Random.default_rng())
     # define function of potential, capture parameters
     pot(z) = potential(z, p)
 
+
+    function update_dZ!(x,y,i,j,d2,dZ)
+        R = wrap(p, x - y)
+            if sqrt(d2) < p.cutoff
+                alpha = s.theta[i]
+                beta  = s.theta[j]
+
+                z = @SVector[R[1], R[2], alpha, beta]
+                dzij = ForwardDiff.gradient(pot, z)
+                 
+                dZ[i] += -1/N*@SVector[dzij[1],dzij[2],dzij[3]]
+                dZ[j] += -1/N*@SVector[-dzij[1],-dzij[2],dzij[4]]
+                #dZ[i] += -1/N * SVec2(dz[1], dz[2])
+                #dZ[j] += -1/N * dz[3]
+        
+            end       
+        return dZ
+    end
+
+    
+
+
+
     @showprogress for k in 1:n_steps
+
+        for i in 1:N
+            system.positions[i]=s.X[i]
+        end
+
+        map_pairwise!(update_dZ!, system)
 
         # set forces to zero 
         for i in 1:N
-            dX[i] = zero(SVec2)
-            dTheta[i] = 0.0
+            dX[i] = system.dZ[i][1:2]
+            dTheta[i] = system.dZ[i][3]
         end
             
-        # compute forces
-        for i in 1:N
-            # for (j, offset) in neighbours_bc(p, bht, s.X[i], p.cutoff)
-            for j in 1:N 
-                if i != j
-                    
-                    R = wrap(p, s.X[i] - s.X[j])
-
-                    if norm(R) < p.cutoff
-                        alpha = s.theta[i]
-                        beta  = s.theta[j]
-
-                        z = @SVector[R[1], R[2], alpha, beta]
-                        dz = ForwardDiff.gradient(pot, z)
-                        
-                        dX[i]     += -1/N * SVec2(dz[1], dz[2])
-                        dTheta[i] += -1/N * dz[3]
-                    end
-                end
-            end
-        end
+       
+    
 
         # integrate forces
         for i in 1:N
