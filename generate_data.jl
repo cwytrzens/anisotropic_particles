@@ -19,7 +19,7 @@ function generate_data(p, output_base, sim_name)
     ####
     begin
         Makie.inline!(true)
-        fig = Figure(size=(1800, 600))
+        fig = Figure(size=(1600, 600))
 
         ax = Axis(fig[1, 1], aspect=DataAspect(), title="init")
 
@@ -47,7 +47,12 @@ function generate_data(p, output_base, sim_name)
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E)
 
-        Label(fig[0,1:3], sim_name, fontsize = 32)
+
+      
+
+        plot_label=sim_name * ", Du= "*string(p.D_u) *",Dx="*string(p.D_x)*", mu="*string(p.mu)*", lambda="*string(p.lambda)*", N="*string(p.N)*", l="*string(p.l)*", d="*string(p.d)
+
+        Label(fig[0,1:3],plot_label, fontsize = 32)
 
         save(joinpath(output_base, "snapshots.png"), fig)
         fig
@@ -78,7 +83,7 @@ output_folder = "output"
 
 
 mkpath(output_folder)
-redo = true
+redo = false 
 
 for (root, folder, files) in walkdir(input_folder)
 
@@ -87,9 +92,11 @@ for (root, folder, files) in walkdir(input_folder)
         param_fn = joinpath(root, fn)
         sim_name = splitext(fn)[1]
         output_base = joinpath(output_folder, relpath(root, input_folder), sim_name)
-        mkpath(output_base)
+        println(output_base)
 
         if !isdir(output_base) || redo
+            
+            mkpath(output_base)
             cp(param_fn, joinpath(output_base, "param.toml"), force=true)
 
             p = loadparameters(param_fn)
