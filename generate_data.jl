@@ -51,6 +51,7 @@ function generate_data(p, output_base, sim_name)
       
 
         plot_label=sim_name * ", Du= "*string(p.D_u) *",Dx="*string(p.D_x)*", mu="*string(p.mu)*", lambda="*string(p.lambda)*", N="*string(p.N)*", l="*string(p.l)*", d="*string(p.d)
+       # plot_label="IBM simulation with Du= "*string(p.D_u) *",Dx="*string(p.D_x)*", mu="*string(p.mu)*", lambda="*string(p.lambda)*", N="*string(p.N)*", l="*string(p.l)*", d="*string(p.d)
 
         Label(fig[0,1:3],plot_label, fontsize = 32)
 
@@ -71,6 +72,8 @@ function generate_data(p, output_base, sim_name)
     record(fig, joinpath(output_base, "movie.mp4"), eachindex(sol)) do i 
         s_obs[] = sol[i]  # update state
         ax.title = sim_name * " t = $(round(ts[i], digits = 2))" 
+        #ax.title = "IBM simulation, t = $(round(ts[i], digits = 2))" 
+
     end
 
 end
@@ -113,3 +116,39 @@ end
 # output_base = "output\\Du\\params"
 # sim_name = "test"
 
+# function sidebysidefig(folder_path)
+
+#     input_folder = "input"
+#     output_folder = "output"
+
+#     vary_folder = "varyDuDx"
+
+#     input_base = joinpath(input_folder, vary_folder)
+
+#     mkpath(input_base)
+#     mkpath(output_folder)
+#     redo = false 
+#     counter=0;
+
+#     for (root, folder, files) in walkdir(input_folder)
+
+#         for fn in files
+
+#             param_fn = joinpath(root, fn)
+#             sim_name = splitext(fn)[1]
+#             output_base = joinpath(output_folder, relpath(root, input_folder), sim_name)
+#             println(output_base)
+
+
+#         Makie.inline!(true)
+#         fig = Figure(size=(1600, 600))
+
+#         ax = Axis(fig[1, 1], aspect=DataAspect(), title="init")
+
+#         s = at(ts, sol, p.t_start)
+#         X = Point2f.(s.X)
+#         U = Point2f.(sincos.(s.theta))
+#         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
+#         poly!(ax, E)
+#     end
+# end
