@@ -5,7 +5,7 @@ using GLMakie, ForwardDiff, ProgressMeter, Accessors
 using GLMakie.GeometryBasics
 using SpatialHashTables
 using TOML
-using CellListMap
+using KernelAbstractions
 
 #= A few notes 
 - using `global` is not good for performance. try to pass all parameters (can account for 10 to 100 times faster!)
@@ -32,9 +32,8 @@ using CellListMap
   - one could also have a slider in the window for interactive use 
   =#  
 
-
+vec2(p)
 const SVec2 = SVector{2, Float64}
-
 
 
 
