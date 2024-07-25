@@ -113,14 +113,28 @@ function init(p, rng = Random.default_rng())
     (;N, Lx, Ly) = p
 
     # create initial positions and angles
+
     X = [SVec2(rand(rng) * Lx, rand(rng) * Ly) for _ in 1:N] 
     theta = [rand(rng) * pi for _ in 1:N]
+
+    if hasproperty(p, :init) 
+        if p.init == "Havva_1"
+            for i in eachindex(X)
+                if X[i][1] < Lx/2 
+                    theta[i] = 0.0
+                else 
+                    theta[i] = pi/2.0
+                end
+            end
+        end
+    end
 
     
     s = (;X, theta)
 
     return s
 end 
+
 
 
 function potential(x, p)
@@ -137,7 +151,9 @@ function potential(x, p)
     gamma_j = (l^2 - d^2) * @SMatrix[cb^2 cb*sb; cb*sb sb^2] + d^2 * I
     Σ = gamma_i + gamma_j
     
-    return 1/(4π)^1 * sqrt(det(Σ)) * exp(-dot(R, inv(Σ) * R))
+    expo = hasproperty(p, :expo) ? p.expo : 0.5
+
+    return 1/(4π)^1 * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
 end
 
 # begin 
