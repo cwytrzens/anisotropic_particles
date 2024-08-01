@@ -3,11 +3,16 @@
 using LinearAlgebra, Random, StaticArrays
 using GLMakie, ForwardDiff, ProgressMeter, Accessors
 using GLMakie.GeometryBasics
-using SpatialHashTables
+using SpatialHashTables, KernelAbstractions
 using TOML
 using CellListMap
+using SpatialHashTables: dist, dist²
 
-#= A few notes 
+
+
+#= 
+
+A few notes 
 - using `global` is not good for performance. try to pass all parameters (can account for 10 to 100 times faster!)
   if globals are really needed, use `const` instead.
   - to avoid globals, one can use NamedTuples to pass many values around 
@@ -30,12 +35,12 @@ using CellListMap
     translates into the data which needs to be plotted.
   - then, we just need to update the state to record the movie 
   - one could also have a slider in the window for interactive use 
-  =#  
+=#  
 
 
 const SVec2 = SVector{2, Float64}
 
-
+const backend = KernelAbstractions.CPU()
 
 
 #############################
@@ -83,23 +88,14 @@ function ellipse(X, theta, p)
     (;l, d) = p
     s, c = sincos(theta) 
     R = @SMatrix[ c -s; s c ]
-    Polygon(
+    return Polygon(
         [Point2f(X + R * SVec2( l * cos(t + theta), d * sin(t + theta) )) for t in LinRange(0,2π,20)]
         )
 end
 
-@inline function neighbours_bc(p, st, pos, r)
+@inline function wrap(p, dx; dom = SA[p.Lx, p.Ly], inv_dom = inv.(dom))
     if p.periodic
-        return periodic_neighbours(st, pos, r)
-    else
-        return ( (i, zero(SVec2)) for i in neighbours(st, pos, r) )
-    end
-end
-
-@inline function wrap(p, dx)
-    if p.periodic
-        dom = SVec2(p.Lx, p.Ly)
-        return @. dx - dom * round(dx ./ dom)
+        return @. dx - dom * round(dx * inv_dom)
     else 
         return dx
     end
@@ -156,20 +152,35 @@ function potential(x, p)
     return 1/(4π)^1 * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
 end
 
-# begin 
-#     i = 1
-#     j = 2
+@kernel function particle_interaction!(p, s, grid, dX, dTheta, dom, inv_dom)
 
-#     R = s.X[j] - s.X[i]
-#     alpha = s.theta[i]
-#     beta  = s.theta[j]
+    i = @index(Global) 
+    Xi = s.X[i]
+    dXi = zero(Xi)
+    dThetai = 0.0
 
-#     x = [R..., alpha, beta]
-#     potential(x, p)
+    N = length(s.X)
 
-#     (dX1, dX2, dalpha, dbeta) = ForwardDiff.gradient( (x) -> potential(x,p), x)
-# end 
+    for j in neighbours(grid, Xi, p.cutoff)
+        Xij = Xi - s.X[j]
 
+        d² = dist²(Xij)
+        if 0 < d² < p.cutoff 
+            R = wrap(p, Xij; dom, inv_dom)
+            alpha = s.theta[i]
+            beta  = s.theta[j]
+
+            z = SA[R[1], R[2], alpha, beta]
+            dzij = ForwardDiff.gradient(z -> potential(z, p), z)
+            
+            dXi     += -1/N * SA[dzij[1], dzij[2]]
+            dThetai += -1/N * dzij[3]
+        end
+    end
+
+    dX[i] = dXi
+    dTheta[i] = dThetai
+end
 
 
 #############################
@@ -190,19 +201,12 @@ function simulate(s_init, p, rng = Random.default_rng())
     dX = similar(s.X)
     dTheta = similar(s.theta)
 
-    dZ= [SVector{3,Float64}(0,0,0) for _ in 1:N] 
+    dZ = [SVector{3,Float64}(0,0,0) for _ in 1:N] 
 
-    #bht = BoundedHashTable(s.X, p.cutoff, (0.0, 0.0), (p.Lx, p.Ly))
+    grid = BoundedGrid(p.cutoff, SA[p.Lx, p.Ly], s.X)
+    particle_interaction_kernel = particle_interaction!(get_backend(s.X), 64)
 
 
-    system = ParticleSystem(
-        positions = s.X, 
-        unitcell=[p.Lx,p.Ly], 
-        cutoff = p.cutoff, 
-        output = dZ,
-        output_name = :dZ
-    )
- 
     n_steps = ceil(Int64, (p.t_end - p.t_start) / p.t_step)
     t_last_save = 0.0
 
@@ -214,45 +218,18 @@ function simulate(s_init, p, rng = Random.default_rng())
     # define function of potential, capture parameters
     pot(z) = potential(z, p)
 
-
-    function update_dZ!(x,y,i,j,d2,dZ)
-        R = wrap(p, x - y)
-            if sqrt(d2) < p.cutoff
-                alpha = s.theta[i]
-                beta  = s.theta[j]
-
-                z = @SVector[R[1], R[2], alpha, beta]
-                dzij = ForwardDiff.gradient(pot, z)
-                 
-                dZ[i] += -1/N*@SVector[dzij[1],dzij[2],dzij[3]]
-                dZ[j] += -1/N*@SVector[-dzij[1],-dzij[2],dzij[4]]
-                #dZ[i] += -1/N * SVec2(dz[1], dz[2])
-                #dZ[j] += -1/N * dz[3]
-        
-            end       
-        return dZ
-    end
-
-    
-
-
+    dom = SA[p.Lx, p.Ly]
+    inv_dom = 1 ./ dom
+  
 
     @showprogress for k in 1:n_steps
 
-        for i in 1:N
-            system.positions[i]=s.X[i]
-        end
+        updatecells!(grid, s.X)
 
-        map_pairwise!(update_dZ!, system)
+        fill!(dX, zero(eltype(dX)))
+        fill!(dTheta, 0.0)
 
-        # set forces to zero 
-        for i in 1:N
-            dX[i] = system.dZ[i][1:2]
-            dTheta[i] = system.dZ[i][3]
-        end
-            
-       
-    
+        particle_interaction_kernel(p, s, grid, dX, dTheta, dom, inv_dom, ndrange = length(s.X))
 
         # integrate forces
         for i in 1:N
@@ -290,11 +267,12 @@ function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
     ax = Axis(fig_pos, aspect = DataAspect())
 
     X = @lift Point2f.($s.X) 
+    angles = @lift mod.($s.theta, π)
     U = @lift Point2f.(sincos.($s.theta))
 
     E = @lift [ ellipse($s.X[i], $s.theta[i], p) for i in 1:p.N ]
 
-    poly!(E)
+    poly!(E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
     #scatter!(ax, X)
     #arrows!(ax, X, U, lengthscale = 0.2)
 

@@ -2,13 +2,19 @@ include("definitions.jl")
 
 
 p = loadparameters("params.toml")
-p = @set p.N = 300
-p = @set p.Lx = 40.0
-p = @set p.Ly = 40.0
+p = @set p.N = 30_000
+p = @set p.t_end = 1000.0
 
 Random.seed!(0)  # set random seed
 s = init(p)
 ts, sol = simulate(s, p)
+
+# benchmarks:
+# - 1.056791 seconds (2.98 M allocations: 131.389 MiB)
+# - 1.028484 seconds (2.98 M allocations: 131.385 MiB)
+
+# SHT: 
+# - 0.488747 seconds (15.01 k allocations: 16.006 MiB)
 
 #result_1 = deepcopy( (;ts, sol) )
 #result_2 = deepcopy( (;ts, sol) )
@@ -21,14 +27,6 @@ ts, sol = simulate(s, p)
 # s_obs = Observable(s)
 # fig = init_plot(s_obs, p)
 
-####
-# Make video 
-####
-# record(fig, "movie.mkv", eachindex(sol)) do i 
-#     s_obs[] = sol[i]  # update state
-# end
-
-
 #####
 # Interactive Window 
 #####
@@ -38,6 +36,14 @@ s_obs = @lift sol[$(sl.value)]
 
 init_plot(s_obs, p, fig[1,1])
 fig
+
+####
+# Make video 
+####
+record(fig, "movie.mp4", eachindex(sol)) do i 
+    s_obs[] = sol[i]  # update state
+end
+
 
 
 #####
