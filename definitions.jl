@@ -236,9 +236,6 @@ function simulate(s_init, p, rng = Random.default_rng())
 
         updatecells!(grid, s.X)
 
-        fill!(dX, zero(eltype(dX)))
-        fill!(dTheta, 0.0)
-
         particle_interaction_kernel(p, s, grid, dX, dTheta, dom, inv_dom, ndrange = length(s.X))
 
         # integrate forces
