@@ -34,7 +34,5 @@ t_save = 0.0
 t_start = 0.0
 t_step = 5.0
 
-expo = 0.5
-
 init = "Antoine_1"
 freq = 2

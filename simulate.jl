@@ -5,6 +5,9 @@ p = loadparameters("params.toml")
 p = @set p.N = 30_000
 p = @set p.t_end = 5000.0
 
+# convert to GPU types...
+p = map( x -> x isa Int ? IntT(x) : x isa Float64 ? FloatT(x) : x, p)
+
 Random.seed!(0)  # set random seed
 s = init(p)
 ts, sol = simulate(s, p)

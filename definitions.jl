@@ -1,4 +1,21 @@
 # to install, go into REPL, press ']' and then pkg> add GLMakie StaticArrays
+const use_gpu = false
+
+if use_gpu 
+    using CUDA
+    const FloatT = Float32 
+    const IntT = Int32  
+    const IndexVecT = CuVector{IntT}
+    const DataArray = CuArray
+    const DataVector = CuVector
+else
+    const FloatT =Float64 
+    const IntT = Int64 
+    const IndexVecT = Vector{IntT}
+
+    const DataArray = Array
+    const DataVector = Vector
+end
 
 using LinearAlgebra, Random, StaticArrays
 using GLMakie, ForwardDiff, ProgressMeter, Accessors
@@ -38,9 +55,9 @@ A few notes
 =#  
 
 
-const SVec2 = SVector{2, Float64}
+const SVec2 = SVector{2, FloatT}
 
-const backend = KernelAbstractions.CPU()
+const backend = use_gpu ? CUDA.CUDABackend() : KernelAbstractions.CPU()
 
 
 #############################
@@ -111,7 +128,7 @@ function init(p, rng = Random.default_rng())
     # create initial positions and angles
 
     X = [SVec2(rand(rng) * Lx, rand(rng) * Ly) for _ in 1:N] 
-    theta = [rand(rng) * pi for _ in 1:N]
+    theta = [rand(rng, FloatT) * pi for _ in 1:N]
 
     if hasproperty(p, :init) 
         if p.init == "Havva_1"
@@ -138,6 +155,10 @@ function init(p, rng = Random.default_rng())
     
     s = (;X, theta)
 
+    if use_gpu
+        s = (; X = cu(X), theta = cu(theta))
+    end
+
     return s
 end 
 
@@ -157,9 +178,10 @@ function potential(x, p)
     gamma_j = (l^2 - d^2) * @SMatrix[cb^2 cb*sb; cb*sb sb^2] + d^2 * I
     Σ = gamma_i + gamma_j
     
-    expo = hasproperty(p, :expo) ? p.expo : 0.5
+    # expo = hasproperty(p, :expo) ? p.expo : FloatT(0.5)
+    expo = FloatT(0.5)
 
-    return 1/(4π)^1 * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
+    return FloatT(1/(4π)) * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
 end
 
 @kernel function particle_interaction!(p, s, grid, dX, dTheta, dom, inv_dom)
@@ -167,7 +189,7 @@ end
     i = @index(Global) 
     Xi = s.X[i]
     dXi = zero(Xi)
-    dThetai = 0.0
+    dThetai = FloatT(0.0)
 
     N = length(s.X)
 
@@ -190,7 +212,7 @@ end
 
     dX[i] = dXi
     dTheta[i] = dThetai
-end
+end 
 
 
 #############################
@@ -198,9 +220,9 @@ end
 ##########################
 function simulate(s_init, p, rng = Random.default_rng()) 
 
-    
     (;N, mu, lambda) = p
-
+    
+    p_gpu = map(x -> (x isa IntT || x isa FloatT || x isa Bool) ? x : nothing, p)
 
     ts = [p.t_start]
     sol = [s_init]
@@ -211,9 +233,7 @@ function simulate(s_init, p, rng = Random.default_rng())
     dX = similar(s.X)
     dTheta = similar(s.theta)
 
-    dZ = [SVector{3,Float64}(0,0,0) for _ in 1:N] 
-
-    grid = BoundedGrid(p.cutoff, SA[p.Lx, p.Ly], s.X)
+    grid = BoundedGrid(p.cutoff, SA[p.Lx, p.Ly], s.X, IndexVecT)
     particle_interaction_kernel = particle_interaction!(get_backend(s.X), 64)
 
 
@@ -228,20 +248,20 @@ function simulate(s_init, p, rng = Random.default_rng())
     # define function of potential, capture parameters
     pot(z) = potential(z, p)
 
-    dom = SA[p.Lx, p.Ly]
-    inv_dom = 1 ./ dom
+    dom = SVec2(p.Lx, p.Ly)
+    inv_dom = FloatT.(1 ./ dom)
   
 
     @showprogress for k in 1:n_steps
 
         updatecells!(grid, s.X)
 
-        particle_interaction_kernel(p, s, grid, dX, dTheta, dom, inv_dom, ndrange = length(s.X))
+        particle_interaction_kernel(p_gpu, s, grid, dX, dTheta, dom, inv_dom, ndrange = length(s.X))
 
         # integrate forces
         for i in 1:N
             s.X[i]     += dt * mu * dX[i]         + sqrt(dt) * sqrt(2 * p.D_x) * randn(rng, SVec2)
-            s.theta[i] += dt * lambda * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn(rng)
+            s.theta[i] += dt * lambda * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn(rng, FloatT)
         end
 
         if p.periodic
