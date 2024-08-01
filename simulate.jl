@@ -33,7 +33,7 @@ ts, sol = simulate(s, p)
 fig = Figure()
 sl = Slider(fig[2,1], range = eachindex(sol))
 s_obs = @lift sol[$(sl.value)]
-s_obs = Observable(sol[1])
+# s_obs = Observable(sol[1])  
 init_plot(s_obs, p, fig[1,1])
 fig
 
