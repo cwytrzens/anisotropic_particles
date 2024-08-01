@@ -41,7 +41,8 @@ end
 =# 
 
 function nematic_mean(thetas::Vector{Float64})
-    vs = SVector.(sincos.(thetas))
+    
+    vs = SVector.(zip(cos.(thetas), sin.(thetas)))
     return nematic_mean(vs)
 end
 
@@ -60,9 +61,9 @@ begin
     
     fig = Figure()
     ax = Axis(fig[1,1], title = "average direction", xlabel = "vx", ylabel = "vy")
-    limits!(ax, -1, 1, -1, 1)
+    limits!(ax, -1.1, 1.1, -1.1, 1.1)
 
-    ls = lines!(ax, getindex.(avg_dir, 1), getindex.(avg_dir, 2), color = ts)
+    ls = lines!(ax, getindex.(avg_dir, 1), getindex.(avg_dir, 2), color = ts, colormap = :thermal)
 
     Colorbar(fig[1,2], ls, label = "time")
 
