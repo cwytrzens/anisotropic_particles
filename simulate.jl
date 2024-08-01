@@ -43,10 +43,10 @@ fig
 ####
 # Make video 
 ####
-record(fig, "movie_antoine.mp4", eachindex(sol)[1:10:end]) do i 
-    s_obs[] = sol[i]  # update state
-    @show i
-end
+# record(fig, "movie_antoine.mp4", eachindex(sol)[1:10:end]) do i 
+#     s_obs[] = sol[i]  # update state
+#     @show i
+# end
 
 
 
