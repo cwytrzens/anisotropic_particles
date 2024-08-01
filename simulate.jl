@@ -3,7 +3,7 @@ include("definitions.jl")
 
 p = loadparameters("params.toml")
 p = @set p.N = 30_000
-p = @set p.t_end = 1000.0
+p = @set p.t_end = 5000.0
 
 Random.seed!(0)  # set random seed
 s = init(p)
@@ -33,15 +33,16 @@ ts, sol = simulate(s, p)
 fig = Figure()
 sl = Slider(fig[2,1], range = eachindex(sol))
 s_obs = @lift sol[$(sl.value)]
-
+s_obs = Observable(sol[1])
 init_plot(s_obs, p, fig[1,1])
 fig
 
 ####
 # Make video 
 ####
-record(fig, "movie.mp4", eachindex(sol)) do i 
+record(fig, "movie_antoine.mp4", eachindex(sol)[1:10:end]) do i 
     s_obs[] = sol[i]  # update state
+    @show i
 end
 
 

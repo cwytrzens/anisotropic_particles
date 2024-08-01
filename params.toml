@@ -36,4 +36,5 @@ t_step = 5.0
 
 expo = 0.5
 
-init = "Havva_1"
+init = "Antoine_1"
+freq = 2

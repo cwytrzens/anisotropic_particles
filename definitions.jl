@@ -122,7 +122,17 @@ function init(p, rng = Random.default_rng())
                     theta[i] = pi/2.0
                 end
             end
+        elseif p.init == "Antoine_1"
+            for i in eachindex(X)
+                if sin(X[i][1]/Lx * p.freq * 2π) < 0 
+                    theta[i] = 0.0
+                else 
+                    theta[i] = pi/2.0
+                end
+            end
         end
+        
+
     end
 
     
@@ -262,7 +272,7 @@ end
 # Create plot 
 ############################################
 init_plot(s, p, fig_pos = Figure()[1,1]) = init_plot(Observable(s), p, fig)
-
+fli(x) = SA[x[2],-x[1]]
 function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
     ax = Axis(fig_pos, aspect = DataAspect())
 
@@ -270,10 +280,10 @@ function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
     angles = @lift mod.($s.theta, π)
     U = @lift Point2f.(sincos.($s.theta))
 
-    E = @lift [ ellipse($s.X[i], $s.theta[i], p) for i in 1:p.N ]
+    E = @lift [ ellipse(fli($s.X[i]), $s.theta[i], p) for i in 1:p.N ]
 
-    poly!(E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
-    #scatter!(ax, X)
+    poly!(E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
+    # scatter!(ax, X, markersize = 1.6)
     #arrows!(ax, X, U, lengthscale = 0.2)
 
     current_figure() 
