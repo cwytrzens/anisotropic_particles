@@ -47,8 +47,8 @@ function init(p)
 
     xs = LinRange(0, p.Lx, p.nx)
     ys = LinRange(0, p.Ly, p.ny)
-
-    u0 = rho_min .* ( 1.1 .+ rand(nx, ny) )
+    sigma = 2.0
+    u0 = @. 30 + exp(-(xs - 2*p.Lx/3)^2/sigma^2 - (ys' - p.Ly/2)^2/sigma^2)  + exp(-(xs - p.Lx/3)^2/sigma^2 - (ys' - p.Ly/2)^2/sigma^2) # .* ( 1.1 .+ rand(nx, ny) )
 end
 
 u0 = init(p)
