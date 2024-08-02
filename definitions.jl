@@ -280,7 +280,7 @@ function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
 
     poly!(E)
     #scatter!(ax, X)
-    #arrows!(ax, X, U, lengthscale = 0.2)
+    arrows!(ax, X, U, lengthscale = 0.5)
 
     current_figure() 
 end

@@ -28,6 +28,8 @@ function generate_data(p, output_base, sim_name)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E)
+  
+        arrows!(X,U)
 
 
 
@@ -38,6 +40,7 @@ function generate_data(p, output_base, sim_name)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E)
+        arrows!(X,U)
 
         ax = Axis(fig[1, 3], aspect=DataAspect(), title="terminal")
 
@@ -46,7 +49,7 @@ function generate_data(p, output_base, sim_name)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E)
-
+        arrows!(X,U)
 
       
 
