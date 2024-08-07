@@ -1,6 +1,6 @@
 include("definitions.jl")
 
-
+using CSV
 
 function generate_data(p, output_base, sim_name)
     Random.seed!(0)  # set random seed
@@ -25,28 +25,33 @@ function generate_data(p, output_base, sim_name)
 
         s = at(ts, sol, p.t_start)
         X = Point2f.(s.X)
+        angles = mod.(s.theta, π)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
-        poly!(ax, E)
+        poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
+        CSV.write(joinpath(output_base,"X_t_start.csv"), s.X)
+        CSV.write(joinpath(output_base,"U_t_start.csv"), U)
 
 
         ax = Axis(fig[1, 2], aspect=DataAspect(), title="middle")
 
         s = at(ts, sol, p.t_end / 2)
         X = Point2f.(s.X)
+        theta_tmp=s.theta
+        angles = mod.(s.theta, π)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
-        poly!(ax, E)
+        poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
         ax = Axis(fig[1, 3], aspect=DataAspect(), title="terminal")
 
         s = at(ts, sol, p.t_end)
+        angles = mod.(s.theta, π)
         X = Point2f.(s.X)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
-        poly!(ax, E)
-
+        poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
       
 
