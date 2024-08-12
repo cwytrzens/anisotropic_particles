@@ -2,12 +2,14 @@ include("definitions.jl")
 
 using DelimitedFiles
 
+const make_movie = false
+
 function generate_data(p, output_base, sim_name)
     Random.seed!(0)  # set random seed
     s = init(p)
     ts, sol = simulate(s, p)
 
-    at(ts, sol, t) = sol[findfirst(ts .>= t)]
+        at(ts, sol, t) = sol[findfirst(ts .>= t)]
 
     #result_1 = deepcopy( (;ts, sol) )
     #result_2 = deepcopy( (;ts, sol) )
@@ -32,7 +34,7 @@ function generate_data(p, output_base, sim_name)
 
 
         writedlm(joinpath(output_base,"theta_t_start.csv"), s.theta, ',')
-        writedlm(joinpath(output_base,"sincostheta_t_start.csv"), U, ',')
+        writedlm(joinpath(output_base,"U_t_start.csv"), U, ',')
         writedlm(joinpath(output_base,"X_t_start.csv"), s.X, ',')
 
         ax = Axis(fig[1, 2], aspect=DataAspect(), title="middle   t="*string(p.t_end/2))
@@ -41,15 +43,14 @@ function generate_data(p, output_base, sim_name)
 
         s = at(ts, sol, p.t_end / 2)
         X = Point2f.(s.X)
-        theta_tmp=s.theta
         angles = mod.(s.theta, π)
         U = Point2f.(sincos.(s.theta))
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
-        writedlm(joinpath(output_base,"theta_t_middle.csv"), s.theta, ',')
-        writedlm(joinpath(output_base,"sincostheta_t_middle.csv"), U, ',')
-        writedlm(joinpath(output_base,"X_t_middle.csv"), s.X, ',')
+        # writedlm(joinpath(output_base,"theta_t_middle.csv"), s.theta, ',')
+        # writedlm(joinpath(output_base,"sincostheta_t_middle.csv"), U, ',')
+        # writedlm(joinpath(output_base,"X_t_middle.csv"), s.X, ',')
 
 
         ax = Axis(fig[1, 3], aspect=DataAspect(), title="terminal   t="*string(p.t_end))
@@ -62,7 +63,7 @@ function generate_data(p, output_base, sim_name)
         poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
         writedlm(joinpath(output_base,"theta_t_end.csv"), s.theta, ',')
-        writedlm(joinpath(output_base,"sincostheta_t_end.csv"), U, ',')
+        writedlm(joinpath(output_base,"U_t_end.csv"), U, ',')
         writedlm(joinpath(output_base,"X_t_end.csv"), s.X, ',')
 
 
@@ -73,6 +74,24 @@ function generate_data(p, output_base, sim_name)
 
         save(joinpath(output_base, "snapshots.png"), fig)
         fig
+
+        t_run_write_to_file=p.t_start
+        while(t_run_write_to_file <=p.t_end)
+        
+            s = at(ts,sol,t_run_write_to_file)
+            U = Point2f.(sincos.(s.theta))
+            path_theta=joinpath(output_base,"theta")
+            mkpath(path_theta)
+            path_U=joinpath(output_base,"U")
+            mkpath(path_U)
+            path_X=joinpath(output_base,"X")
+            mkpath(path_X)
+            writedlm(joinpath(path_theta,"theta_t"*string(t_run_write_to_file)*".csv"), s.theta, ',')
+            writedlm(joinpath(path_U,"U_t"*string(t_run_write_to_file)*".csv"), U, ',')
+            writedlm(joinpath(path_X,"X_t"*string(t_run_write_to_file)*".csv"), s.X, ',')
+
+            t_run_write_to_file += p.t_write_to_file
+        end
     end
 
 
@@ -80,17 +99,20 @@ function generate_data(p, output_base, sim_name)
     ####
     # Make video 
     ####
+    if make_movie
+        Makie.inline!(false)
+        s_obs = Observable(s)
+        fig = init_plot(s_obs, p)
+        ax = content(fig[1,1])
+        record(fig, joinpath(output_base, "movie.mp4"), eachindex(sol)) do i 
+            s_obs[] = sol[i]  # update state
+            ax.title = sim_name * " t = $(round(ts[i], digits = 2))" 
+            i=i+100
+            #ax.title = "IBM simulation, t = $(round(ts[i], digits = 2))" 
 
-    Makie.inline!(false)
-    s_obs = Observable(s)
-    fig = init_plot(s_obs, p)
-    ax = content(fig[1,1])
-    record(fig, joinpath(output_base, "movie.mp4"), eachindex(sol)) do i 
-        s_obs[] = sol[i]  # update state
-        ax.title = sim_name * " t = $(round(ts[i], digits = 2))" 
-        #ax.title = "IBM simulation, t = $(round(ts[i], digits = 2))" 
-
+        end
     end
+
 
 end
 

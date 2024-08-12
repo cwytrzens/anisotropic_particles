@@ -8,19 +8,20 @@ using TOML
 
 data= (l = 1.5,
 d = 0.3,
-cutoff = 20.0,    
-N = 2000,
-t_step = 1.0,
+cutoff = 15.0,    
+N = 10000,
+t_step = 5.0,
 t_save = 0.0,
 t_start = 0.0,
-t_end = 500.0,
-Lx = 50.0,
-Ly = 50.0,
+t_end = 5000.0,
+Lx = 100.0,
+Ly = 100.0,
 mu = 10.0,
 lambda = 50.0,
 D_x  = 0.01,
 D_u =  0.001,
 periodic = true,
+t_write_to_file=1000.0
 );
 
 counter=0;

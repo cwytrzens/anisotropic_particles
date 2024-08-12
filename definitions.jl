@@ -275,7 +275,8 @@ function simulate(s_init, p, rng = Random.default_rng())
         if t_last_save >= p.t_save 
             push!(sol, deepcopy(s))
             push!(ts, t)
-            t_last_save = 0.0
+            t_last_save = 0.0 
+           
         else
             t_last_save += dt
         end
