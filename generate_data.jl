@@ -1,6 +1,6 @@
 include("definitions.jl")
 
-using CSV
+using DelimitedFiles
 
 function generate_data(p, output_base, sim_name)
     Random.seed!(0)  # set random seed
@@ -21,7 +21,7 @@ function generate_data(p, output_base, sim_name)
         Makie.inline!(true)
         fig = Figure(size=(1600, 600))
 
-        ax = Axis(fig[1, 1], aspect=DataAspect(), title="init")
+        ax = Axis(fig[1, 1], aspect=DataAspect(), title="init   t="*string(p.t_start))
 
         s = at(ts, sol, p.t_start)
         X = Point2f.(s.X)
@@ -30,11 +30,14 @@ function generate_data(p, output_base, sim_name)
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
-        CSV.write(joinpath(output_base,"X_t_start.csv"), s.X)
-        CSV.write(joinpath(output_base,"U_t_start.csv"), U)
 
+        writedlm(joinpath(output_base,"theta_t_start.csv"), s.theta, ',')
+        writedlm(joinpath(output_base,"sincostheta_t_start.csv"), U, ',')
+        writedlm(joinpath(output_base,"X_t_start.csv"), s.X, ',')
 
-        ax = Axis(fig[1, 2], aspect=DataAspect(), title="middle")
+        ax = Axis(fig[1, 2], aspect=DataAspect(), title="middle   t="*string(p.t_end/2))
+
+        
 
         s = at(ts, sol, p.t_end / 2)
         X = Point2f.(s.X)
@@ -44,7 +47,12 @@ function generate_data(p, output_base, sim_name)
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
-        ax = Axis(fig[1, 3], aspect=DataAspect(), title="terminal")
+        writedlm(joinpath(output_base,"theta_t_middle.csv"), s.theta, ',')
+        writedlm(joinpath(output_base,"sincostheta_t_middle.csv"), U, ',')
+        writedlm(joinpath(output_base,"X_t_middle.csv"), s.X, ',')
+
+
+        ax = Axis(fig[1, 3], aspect=DataAspect(), title="terminal   t="*string(p.t_end))
 
         s = at(ts, sol, p.t_end)
         angles = mod.(s.theta, π)
@@ -53,7 +61,10 @@ function generate_data(p, output_base, sim_name)
         E = [ellipse(s.X[i], s.theta[i], p) for i in 1:p.N]
         poly!(ax, E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25)
 
-      
+        writedlm(joinpath(output_base,"theta_t_end.csv"), s.theta, ',')
+        writedlm(joinpath(output_base,"sincostheta_t_end.csv"), U, ',')
+        writedlm(joinpath(output_base,"X_t_end.csv"), s.X, ',')
+
 
         plot_label=sim_name * ", Du= "*string(p.D_u) *",Dx="*string(p.D_x)*", mu="*string(p.mu)*", lambda="*string(p.lambda)*", N="*string(p.N)*", l="*string(p.l)*", d="*string(p.d)
        # plot_label="IBM simulation with Du= "*string(p.D_u) *",Dx="*string(p.D_x)*", mu="*string(p.mu)*", lambda="*string(p.lambda)*", N="*string(p.N)*", l="*string(p.l)*", d="*string(p.d)
