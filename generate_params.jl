@@ -28,18 +28,40 @@ counter=0;
 
 input_folder = "input"
 
-vary_folder = "varyDuDx"
+vary_folder = "varylambdamu"
 
 input_base = joinpath(input_folder, vary_folder)
 
 mkpath(input_base)
 redo = true 
 
-for i in 0.000:0.001:0.01
-    for j in 0.000:0.001:0.01
+# for i in 0.000:0.001:0.01
+#     for j in 0.000:0.001:0.01
+#         counter=counter+1
+#         data = @set data.D_u = i
+#         data = @set data.D_x = j
+#         #println(data.D_u)
+#         sim_name="params$counter"
+#         input_file = joinpath(input_folder, vary_folder,sim_name)
+#         println(input_base)
+
+#         if redo #|| !isfile(sim_name)
+#             printstyled("generate parameterfile $sim_name\n", color=:green)
+#             datadict=Dict(pairs(data))
+#             open(input_file, "w") do io
+#                 TOML.print(io, datadict, sorted=true)
+#             end
+#         end
+#     end
+# end
+
+
+
+for i in 10.0:10.0:100.0
+    for j in 10.0:10.0:100.0
         counter=counter+1
-        data = @set data.D_u = i
-        data = @set data.D_x = j
+        data = @set data.lambda = i
+        data = @set data.mu = j
         #println(data.D_u)
         sim_name="params$counter"
         input_file = joinpath(input_folder, vary_folder,sim_name)
