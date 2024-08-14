@@ -1,6 +1,6 @@
 using TOML 
 
-#include("definitions.jl")
+include("definitions.jl")
 
  #p = TOML.parsefile("params.toml")
 
@@ -18,7 +18,7 @@ Lx = 100.0,
 Ly = 100.0,
 mu = 10.0,
 lambda = 50.0,
-D_x  = 0.01,
+D_x  = 0.001,
 D_u =  0.001,
 periodic = true,
 t_write_to_file=1000.0
@@ -28,7 +28,7 @@ counter=0;
 
 input_folder = "input"
 
-vary_folder = "varylambdamu"
+vary_folder = "varylambdamu_DxDuequal0001"
 
 input_base = joinpath(input_folder, vary_folder)
 
