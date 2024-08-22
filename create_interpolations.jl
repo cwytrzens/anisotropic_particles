@@ -25,9 +25,9 @@ end
 function create_interpolations(p; eta_range = 1000.0 * (1 - p.chi^2), n_interp = 2000)
 
     # interpolate eta(rho)
-    alpha = 1 - p.chi^2
+    alpha = p.chi^2 * p.lambda / p.D_u
 
-    etas = LinRange(0, eta_range, n_interp)[2:end]
+    etas = LinRange(eps(eta_range), eta_range, n_interp)[2:end]
     S2s = S2.(etas, 2)
     rhos = @. etas / (S2s * alpha)
 
@@ -61,3 +61,21 @@ function create_interpolations(p; eta_range = 1000.0 * (1 - p.chi^2), n_interp =
         )
     )
 end
+
+
+function doit()
+    p = loadparameters("inputs/mass_density/mass_density_example.toml")
+    intp = create_interpolations(p)
+
+    Makie.inline!(true)
+    begin 
+        fig = Figure()
+        ax = Axis(fig[1,1], xlabel = "ρ", ylabel = "K(η(ρ))", title = "Positivity of mass density")
+
+        lines!(intp.data.etas, intp.data.Ks)
+
+        fig 
+    end 
+end
+
+doit()
