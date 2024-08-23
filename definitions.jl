@@ -22,9 +22,20 @@ using GLMakie, ForwardDiff, ProgressMeter, Accessors
 using GLMakie.GeometryBasics
 using SpatialHashTables, KernelAbstractions
 using TOML
-using CellListMap
 using SpatialHashTables: dist, dist²
+using Statistics
 
+function nematic_mean(vs::AbstractVector{<:SVector})
+    dim = length(eltype(vs))
+    avg_tensor = mean( w -> w * w', vs) - 1/dim * I 
+    F = eigen(avg_tensor)
+    return dim/(dim-1) * F.vectors[:,end] * F.values[end]
+end
+
+function nematic_mean(thetas::AbstractVector{Float64})
+    vs = SVector.(zip(cos.(thetas), sin.(thetas)))
+    return nematic_mean(vs)
+end
 
 
 #= 
@@ -118,11 +129,19 @@ end
     end
 end
 
+@inline function proj(p, x; dom = SA[p.Lx, p.Ly])
+    if p.periodic
+        mod.(x, dom)
+    else
+        x 
+    end
+end
+
 
 #############################
 #initial random values for X and theta
 #############################
-function init(p, rng = Random.default_rng())
+function initstate(p, rng = Random.default_rng())
     (;N, Lx, Ly) = p
 
     # create initial positions and angles
@@ -141,15 +160,19 @@ function init(p, rng = Random.default_rng())
             end
         elseif p.init == "Antoine_1"
             for i in eachindex(X)
-                if sin(X[i][1]/Lx * p.freq * 2π) < 0 
+                if sin(X[i][2]/Ly * p.freq * 2π) < 0 
                     theta[i] = 0.0
                 else 
                     theta[i] = pi/2.0
                 end
             end
-        end
-        
+        elseif p.init == "bump_1"
+            center = SA[p.Lx, p.Ly] ./ 2 
 
+            for i in eachindex(X)
+                X[i] = randn(SVec2) .* sqrt(p.init_spread) .+ center
+            end
+        end
     end
 
     
@@ -161,6 +184,7 @@ function init(p, rng = Random.default_rng())
 
     return s
 end 
+
 
 
 
@@ -178,31 +202,29 @@ function potential(x, p)
     gamma_j = (l^2 - d^2) * @SMatrix[cb^2 cb*sb; cb*sb sb^2] + d^2 * I
     Σ = gamma_i + gamma_j
     
-    # expo = hasproperty(p, :expo) ? p.expo : FloatT(0.5)
-    expo = FloatT(0.5)
+    expo = hasproperty(p, :expo) ? p.expo : FloatT(0.5)
+    # expo = FloatT(0.5)
 
     return FloatT(1/(4π)) * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
 end
 
-@kernel function particle_interaction!(p, s, grid, dX, dTheta, dom, inv_dom)
-
+@kernel function particle_interaction!(p, X, theta, grid, dX, dTheta, dom, inv_dom)
     i = @index(Global) 
-    Xi = s.X[i]
+    Xi = X[i]
     dXi = zero(Xi)
     dThetai = FloatT(0.0)
 
-    N = length(s.X)
+    N = length(X)
 
     for j in neighbours(grid, Xi, p.cutoff)
-        Xij = Xi - s.X[j]
-
+        Xij = wrap(p, Xi - X[j]; dom, inv_dom)
         d² = dist²(Xij)
-        if 0 < d² < p.cutoff 
-            R = wrap(p, Xij; dom, inv_dom)
-            alpha = s.theta[i]
-            beta  = s.theta[j]
 
-            z = SA[R[1], R[2], alpha, beta]
+        if 0 < d² < p.cutoff 
+            alpha = theta[i]
+            beta  = theta[j]
+
+            z = SA[Xij[1], Xij[2], alpha, beta]
             dzij = ForwardDiff.gradient(z -> potential(z, p), z)
             
             dXi     += -1/N * SA[dzij[1], dzij[2]]
@@ -210,8 +232,8 @@ end
         end
     end
 
-    dX[i] = dXi
-    dTheta[i] = dThetai
+    dX[i] = p.mu * dXi
+    dTheta[i] = p.lambda * dThetai
 end 
 
 
@@ -260,8 +282,8 @@ function simulate(s_init, p, rng = Random.default_rng())
 
         # integrate forces
         for i in 1:N
-            s.X[i]     += dt * mu * dX[i]         + sqrt(dt) * sqrt(2 * p.D_x) * randn(rng, SVec2)
-            s.theta[i] += dt * lambda * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn(rng, FloatT)
+            s.X[i]     += dt * dX[i]     + sqrt(dt) * sqrt(2 * p.D_x) * randn(rng, SVec2)
+            s.theta[i] += dt * dTheta[i] + sqrt(dt) * sqrt(2 * p.D_u) * randn(rng, FloatT)
         end
 
         if p.periodic
@@ -290,17 +312,16 @@ end
 # Create plot 
 ############################################
 init_plot(s, p, fig_pos = Figure()[1,1]) = init_plot(Observable(s), p, fig)
-fli(x) = SA[x[2],-x[1]]
 function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
-    ax = Axis(fig_pos, aspect = DataAspect())
+    ax = Axis(fig_pos, aspect = DataAspect(), title = @lift string("time = ", round($s.t, digits = 1)))
 
-    X = @lift Point2f.($s.X) 
+    X = @lift map( x -> Point2f(proj(p,x)), $s.X) 
     angles = @lift mod.($s.theta, π)
     U = @lift Point2f.(sincos.($s.theta))
 
-    E = @lift [ ellipse(fli($s.X[i]), $s.theta[i], p) for i in 1:p.N ]
+    E = @lift [ ellipse($X[i], $angles[i], p) for i in 1:p.N ]
 
-    poly!(E, color = angles, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
+    poly!(E, color = angles, alpha = 0.5, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
     # scatter!(ax, X, markersize = 1.6)
     #arrows!(ax, X, U, lengthscale = 0.2)
 
