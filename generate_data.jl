@@ -6,7 +6,7 @@ const make_movie = false
 
 function generate_data(p, output_base, sim_name)
     Random.seed!(0)  # set random seed
-    s = init(p)
+    s = initstate(p)
     ts, sol = simulate(s, p)
 
         at(ts, sol, t) = sol[findfirst(ts .>= t)]
