@@ -1,0 +1,24 @@
+D_u = 0.0
+D_x = 0.0001
+
+Lx = 100.0
+Ly = 100.0
+
+N = 10000
+
+d = 0.2
+l = 1.0
+
+density = 1.0 
+
+lambda = 150.0
+mu = 10.0
+
+periodic = true
+
+t_end = 10000.0
+
+init = "random"
+# init_spread = 40
+# freq = 2
+

@@ -40,19 +40,7 @@ end
 
 =# 
 
-using Statistics
 
-function nematic_mean(vs::Vector{<:SVector})
-    dim = length(eltype(vs))
-    avg_tensor = mean( w -> w * w', vs) - 1/dim * I 
-    F = eigen(avg_tensor)
-    return dim/(dim-1) * F.vectors[:,end] * F.values[end]
-end
-
-function nematic_mean(thetas::Vector{Float64})
-    vs = SVector.(zip(cos.(thetas), sin.(thetas)))
-    return nematic_mean(vs)
-end
 
 using Test 
 @test norm(nematic_mean(fill(0.0, 10))) ≈ 1
