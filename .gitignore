@@ -11,3 +11,16 @@
 [Tt]emp/
 *.mp4
 *.mkv
+plot_old.jl
+old_porgram_files/create_interpolations.jl
+old_porgram_files/definitions.jl
+old_porgram_files/generate_data.jl
+old_porgram_files/generate_params.jl
+old_porgram_files/Manifest.toml
+old_porgram_files/params.toml
+old_porgram_files/pde.jl
+old_porgram_files/plot_K.jl
+old_porgram_files/plotting_parameterscan.jl
+old_porgram_files/Project.toml
+old_porgram_files/simulate.jl
+old_porgram_files/statistics.jl
