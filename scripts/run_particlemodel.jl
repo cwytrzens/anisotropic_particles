@@ -18,7 +18,8 @@ sol = simulate(p, s)
 # Interactive Window 
 #####
 fig = Figure()
-sl = Slider(fig[2,1], range = LinRange(0, sol.t[end], 100), startvalue = sol.t[end])
+ts = LinRange(0, sol.t[end], 100)
+sl = Slider(fig[2,1], range = ts, startvalue = ts[end])
 s_obs = @lift State(sol, $(sl.value))
 init_plot(s_obs, p, fig[1,1])
 fig
@@ -26,8 +27,14 @@ fig
 ####
 # Make video 
 ####
-# record(fig, "movie_antoine.mp4", eachindex(sol)[1:10:end]) do i 
-#     s_obs[] = sol[i]  # update state
-#     @show i
-# end
+fig = Figure()
+s_obs = Observable(State(sol, 0.0))
+init_plot(s_obs, p, fig[1,1])
+
+ts = LinRange(0, sol.t[end], 100)
+prog = Progress(length(ts), 1.0)
+record(fig, "movie.mp4", ts) do t 
+    s_obs[] = State(sol, t)
+    next!(prog)
+end
 
