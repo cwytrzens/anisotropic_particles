@@ -22,14 +22,13 @@ end
 
 function parameterscan(p, X::ParameterRange, Y::ParameterRange, n_reps, fnc_analyze; changes = ())
     p = modify(p, changes)
-    data = Array{Any}(undef, length(X.range))
+    data = Array{Any}(undef, length(X.range), length(Y.range))
 
-    cases = [(x, y) for x in X.range, y in Y.range]
-
-    @showprogress for ((i,j), (x,y)) in cases 
+    @showprogress for i in eachindex(X.range), j in eachindex(Y.range)
+        x, y = X.range[i], Y.range[j]
         p_ = modify(p, (X.sym => x, Y.sym => y))
-        sols = simulate_ensemble(p, n_reps)
-        data[i] = fnc_analyze(sols)
+        sols = simulate_ensemble(p_, n_reps)
+        data[i, j] = fnc_analyze(sols)
     end
     return data
 end
