@@ -7,13 +7,11 @@ cutoff_factor = 4.0
 
 N = 10000
 
-d = 0.2
-l = 1.0
-
+chi = 0.9
 density = 1
 
 lambda = 150.0
-mu = 10.0
+mu = 50.0
 
 periodic = true
 
