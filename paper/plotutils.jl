@@ -26,6 +26,7 @@ function trajectoryplot(p, X, ts, data, config;
                             xlabel = L"t \text{ (time)}", 
                             ylabel = L"\gamma_f \text{ (order parameter)}",
                             labels = :normal,
+                            reversed = false,
                             title_extra = "",
                             title = L"\textbf{Trajectories of order parameter } %$(title_extra)")
                             
@@ -46,8 +47,10 @@ function trajectoryplot(p, X, ts, data, config;
     labels = [ x != 0 ? label_format(x) : L"0" for x in X.range]
 
         ax = Axis(fig[1,1]; xlabel, ylabel, title, ygridvisible = true, yticks = 0:0.2:1.0)
-        
-        for (i, x) in enumerate(X.range)
+
+        inds = reversed ? reverse(eachindex(X.range)) : eachindex(X.range)
+
+        for i in inds
             mu = mean(data[:,:,i], dims=2)[:,1]
             st = std(data[:,:,i], dims=2)[:,1]
             up = movingwindow(mu + st / 2)
@@ -59,7 +62,7 @@ function trajectoryplot(p, X, ts, data, config;
         end
             
 
-        for (i, x) in enumerate(X.range)
+        for i in inds
             mu = mean(data[:,:,i], dims=2)[:,1]
             mu = movingwindow(mu)
             lines!(ax, ts, mu, 
@@ -117,20 +120,28 @@ end
 
 function savevideo(fn, p;
                         changes::Tuple = (), 
-                        sol = simulate(modify(p, changes)), 
-                        frames = LinRange(0, sol.t[end], 30 * 10))
+                        p_mod = updateparameters(p, changes),
+                        sol = simulate(p_mod), 
+                        n_frames = 30 * 10,
+                        frames = LinRange(0, sol.t[end], n_frames),
+                        resolution = (1280, 1280))
 
     s_obs = Observable(State(sol, 0.0))
 
 
     GLMakie.activate!()
     with_theme(merge(theme_dark(), theme_latexfonts())) do 
-        fig = Figure()
-        init_plot(s_obs, p, fig[1,1])
+        fig = Figure(size = resolution)
+        AnisotropicParticles.init_plot(s_obs, p_mod, fig[1,1])
         display(fig)
+
+        prog = Progress(length(frames), 1)
         record(fig, fn, frames) do t 
             s_obs[] = State(sol, t)
+            next!(prog)
         end            
     end
     CairoMakie.activate!()
+
+    return p_mod, sol
 end
