@@ -51,9 +51,9 @@ trajectoryplot(p, X, ts, data, config)
 
 
 # Figure 1c
-X = ParameterRange(:chi, L"\chi", LinRange(0.8, 0.98, 6))
-Y = ParameterRange(:density, L"\overline{\rho}", LinRange(0.5, 1.5, 6))
-fn_data = joinpath(datadir, "gamma_f_$(X.sym)_$(Y.sym).jld2")
+X = ParameterRange(:chi, L"\chi", LinRange(0.8, 0.98, 16))
+Y = ParameterRange(:density, L"\overline{\rho}", LinRange(0.5, 1.5, 16))
+fn_data = joinpath(datadir, "gamma_f_$(X.sym)_$(Y.sym)_2.jld2")
 
 data = if redo || !isfile(fn_data)
     data = parameterscan(p, X, Y, 3, analyze_S2_fixedtime(p.t_end); changes = ())
