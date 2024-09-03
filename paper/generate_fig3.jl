@@ -95,10 +95,3 @@ end
 plotheatmap(X, Y, data; xscale = log2, yscale = log2)
 
 
-p_, sol = savevideo("paper/videos/mu_2^12.mp4", p; changes = (:mu => 2^12, :t_end => 3000,), n_frames = 900)
-p_, sol = savevideo("paper/videos/mu_2^14.mp4", p; changes = (:mu => 2^14, :t_end => 3000,), n_frames = 900)
-
-
-
-p_, sol = savevideo("paper/videos/mu_2^14.mp4", p; changes = (:mu => 2^14, :t_end => 3000,), n_frames = 900)
-p_, sol = savevideo("paper/videos/mu=2^14_Dx=2^-5.mp4", p; changes = (:mu => 2^14, :D_x => 2^-5, :t_end => 3000,), n_frames = 900)

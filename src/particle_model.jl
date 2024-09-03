@@ -93,7 +93,7 @@ function initstate(p, rng=Random.default_rng())
         s = map(x -> cu(x), p)
     end
 
-    return s
+    return State(s.X, s.theta, s.t)
 end
 
 
