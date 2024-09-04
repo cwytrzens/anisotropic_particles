@@ -1,4 +1,3 @@
-
 # define functions to compute S₂:
 function Z_g(eta)
     prob = IntegralProblem((θ, η) -> exp(η*cos(θ)^2), (0.0, 1.0*π), eta)
@@ -22,7 +21,7 @@ function create_interpolations(p; kwargs...)
     return create_interpolations(p.chi, p.D_u, p.lambda; kwargs...)
 end 
 
-function create_interpolations(chi, D_u, lambda; deg = 1.0, eta_range = 100.0 * (1 - chi^2), n_interp = 1000)
+function create_interpolations(chi, D_u, lambda; deg = 1.0, eta_range = 100.0 * (1 - chi^2), n_interp = 1000, n = 2)
     
     alpha = chi^2 * lambda / D_u
     sigma = D_u / lambda
@@ -44,7 +43,6 @@ function create_interpolations(chi, D_u, lambda; deg = 1.0, eta_range = 100.0 * 
         (; chi, sigma) = p
 
         (; eta_rho, S2_eta) = cache
-        n = 2
 
         eta = eta_rho(rho)  # evaluate η(ρ)
         eta_prime = DataInterpolations.derivative(eta_rho, rho)  # η'(ρ)

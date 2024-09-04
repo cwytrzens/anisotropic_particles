@@ -112,10 +112,10 @@ function potential(x, p)
     gamma_j = (l^2 - d^2) * @SMatrix[cb^2 cb*sb; cb*sb sb^2] + d^2 * I
     Σ = gamma_i + gamma_j
 
-    expo = hasproperty(p, :expo) ? p.expo : FloatT(0.5)
+    xi = hasproperty(p, :xi) ? p.xi : FloatT(0.0)
     # expo = FloatT(0.5)
 
-    return FloatT(1 / (4π)) * det(Σ)^(expo) * exp(-dot(R, inv(Σ) * R))
+    return FloatT(1 / (4π)) * det(Σ)^(FloatT(0.5) - xi) * exp(-dot(R, inv(Σ) * R))
 end
 
 @kernel function particle_interaction!(p, X, theta, grid, dX, dTheta, dom, inv_dom)

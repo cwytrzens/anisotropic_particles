@@ -27,6 +27,7 @@ function trajectoryplot(p, X, ts, data, config;
                             ylabel = L"\gamma_f \text{ (order parameter)}",
                             labels = :normal,
                             reversed = false,
+                            inds = eachindex(X.range),
                             title_extra = "",
                             title = L"\textbf{Trajectories of order parameter } %$(title_extra)")
                             
@@ -48,8 +49,9 @@ function trajectoryplot(p, X, ts, data, config;
 
         ax = Axis(fig[1,1]; xlabel, ylabel, title, ygridvisible = true, yticks = 0:0.2:1.0)
 
-        inds = reversed ? reverse(eachindex(X.range)) : eachindex(X.range)
+        inds = reversed ? reverse(inds) : inds
 
+        k = 1
         for i in inds
             mu = mean(data[:,:,i], dims=2)[:,1]
             st = std(data[:,:,i], dims=2)[:,1]
@@ -57,17 +59,22 @@ function trajectoryplot(p, X, ts, data, config;
             down = movingwindow(mu - st / 2)
             
             band!(ax, ts, up, down, 
-                color = Makie.wong_colors(0.2)[i],
+                color = Makie.wong_colors(0.2)[mod1(k, 7)],
                 label = labels[i])
+
+            k += 1
         end
             
 
+        k = 1
         for i in inds
             mu = mean(data[:,:,i], dims=2)[:,1]
             mu = movingwindow(mu)
             lines!(ax, ts, mu, 
-                color = Cycled(i), linestyle = Cycled(i),
+                color = Cycled(k), linestyle = Cycled(k),
                 linewidth = 1.5,label = labels[i])
+
+            k += 1
         end
 
         Legend(fig[1,2], ax, X.name, merge = true, framevisible = false)

@@ -7,11 +7,11 @@ mutable struct ParameterRange
     range 
 end
 
-function parameterscan(p, X::ParameterRange, n_reps, fnc_analyze; changes = ())
+function parameterscan(p, X::ParameterRange, n_reps, fnc_analyze; changes = (), extras = (p, x) -> ())
     p = updateparameters(p, changes)
     data = Array{Any}(undef, length(X.range))
     @showprogress for (i, x) in enumerate(X.range) 
-        p_ = updateparameters(p, (X.sym => x,))
+        p_ = updateparameters(p, (X.sym => x, extras(p, x)...))
         sols = simulate_ensemble(p_, n_reps)
         data[i] = fnc_analyze(sols)
     end
