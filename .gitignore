@@ -11,6 +11,7 @@
 [Tt]emp/
 *.mp4
 *.mkv
+*.png
 plot_old.jl
 old_porgram_files/create_interpolations.jl
 old_porgram_files/definitions.jl

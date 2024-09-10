@@ -18,15 +18,24 @@ init_plot(s, p, fig_pos = Figure()[1,1]) = init_plot(Observable(s), p, fig_pos)
 function init_plot(s::Observable, p, fig_pos = Figure()[1,1])
     ax = Axis(fig_pos, aspect = DataAspect(), title = @lift string("time = ", round($s.t, digits = 1)))
 
-    X = @lift map( x -> Point2f(proj(p,x)), $s.X) 
-    angles = @lift mod.($s.theta, π)
+    plotparticles!(ax, s)
+    # X = @lift map( x -> Point2f(proj(p,x)), $s.X) 
+    # angles = @lift mod.($s.theta, π)
 
-    E = @lift [ ellipse($X[i], $angles[i], p) for i in 1:p.N ]
-    poly!(E, color = angles, alpha = 0.5, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
+    # E = @lift [ ellipse($X[i], $angles[i], p) for i in 1:p.N ]
+    # poly!(E, color = angles, alpha = 0.5, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
 
     current_figure() 
 end
 
+plotparticles!(p, s; kwargs...) = plotparticles!(current_axis(), p, s; kwargs...)
+function plotparticles!(ax, p, s::Observable{State}; offset = (0,0), kwargs...)
+    shift = SA[p.Lx, p.Ly] .* offset
+    X = @lift map( x -> Point2f(proj(p,x) + shift), $s.X) 
+    angles = @lift mod.($s.theta, π)
+    E = @lift [ ellipse($X[i], $angles[i], p) for i in 1:p.N ]
+    poly!(ax, E; color = angles, alpha = 0.5, colorrange = (0.0, π), colormap = :cyclic_mygbm_30_95_c78_n256_s25, kwargs...) # :phase, :twilight,  :cyclic_mygbm_30_95_c78_n256_s25   
+end
 
 function interact(sol, p, darktheme = true)
 
